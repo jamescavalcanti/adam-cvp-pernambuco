@@ -28,7 +28,7 @@ Na etapa de agrupamento foi utilizado o algoritmo K-Means, considerando caracter
 - tendência temporal;
 - sazonalidade.
 
-Foram analisadas diferentes quantidades de clusters. A solução com K=4 foi adotada como principal por fornecer maior detalhamento interpretativo dos perfis municipais.
+Foram analisadas diferentes quantidades de clusters. A solução com K=4 foi adotada como representação descritiva por fornecer maior detalhamento interpretativo, apesar de K=2 ter maior silhueta; K=4 não é a solução ótima pela silhueta.
 
 Na etapa de classificação foram avaliados:
 
@@ -41,7 +41,7 @@ Também foi utilizada uma regra de persistência como referência.
 
 ## Principais resultados
 
-A solução de agrupamento adotada identificou quatro perfis, contendo 22, 90, 53 e 20 municípios.
+A solução de agrupamento adotada identificou quatro perfis, contendo 22, 90, 53 e 20 unidades territoriais (184 municípios e Fernando de Noronha no total).
 
 Na classificação, o Random Forest com atributos históricos, territoriais e socioeconômicos foi selecionado por meio de validação temporal.
 
@@ -52,6 +52,26 @@ No período de teste de 2023 a 2025, o modelo apresentou:
 - F1 macro: **53,67%**
 
 A análise de explicabilidade com SHAP indicou predominância das variáveis relacionadas ao histórico recente dos CVP, especialmente médias móveis e taxas recentes.
+
+## Resultados complementares da avaliação científica (protocolo distinto)
+
+A aba **Avaliação científica** apresenta os resultados retrospectivos consolidados do estudo internacional. Não devem ser confundidos com as métricas do Random Forest B da disciplina:
+
+| Experimento | F1 macro (%) |
+|---|---:|
+| XGBoost A, teste completo (2023–2025) | 53,51 |
+| Média móvel de seis meses, teste completo | 52,18 |
+| XGBoost, apenas meses com linha original | 46,28 |
+| Média móvel, apenas meses com linha original | 48,57 |
+| Ablação A: sem perfis | 53,49 |
+| Ablação B: com grupos | 53,41 |
+| Ablação C: distâncias a centroides | 53,14 |
+
+**Atenção:** 5.368 de 26.640 combinações território-mês não possuíam linha na extração e foram codificadas com zero. Isso não demonstra ausência real de crimes. A avaliação de 2023–2025 é retrospectiva e foi previamente explorada; não equivale a uma validação prospectiva intocada. O SHAP disponível no dashboard explica somente o Random Forest B, e não o XGBoost.
+
+## Implantação no Render
+
+A aplicação existente continua em **Plotly Dash** e usa o mesmo `Procfile` (`web: gunicorn app:server`) e as mesmas dependências. Nenhuma variável de ambiente adicional é exigida por esta alteração. Após revisar as mudanças, execute os testes e então publique na branch conectada ao Render.
 
 ## Arquivo principal
 

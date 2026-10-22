@@ -12,7 +12,7 @@ app.title = "CVP Pernambuco | ADAM"
 
 perfis = pd.DataFrame({
     "Perfil": ["Perfil 1", "Perfil 2", "Perfil 3", "Perfil 4"],
-    "Municípios": [22, 90, 53, 20],
+    "Unidades territoriais": [22, 90, 53, 20],
     "Taxa média": [3.64, 13.71, 38.62, 77.91],
     "Coef. variação": [2.21, 0.95, 0.69, 0.56],
     "Tendência": [-0.02, -0.06, -0.25, -0.61],
@@ -163,9 +163,9 @@ app.layout = html.Div([
         dcc.Tab(label="Visão geral", children=[
             html.Div([
                 metric_card("Painel analítico", "26.640", "observações município-mês"),
-                metric_card("Municípios", "185"),
+                metric_card("Unidades territoriais", "185", "184 municípios + Fernando de Noronha"),
                 metric_card("Ocorrências de CVP", "834.398", "2014–2025"),
-                metric_card("Modelo final", "Random Forest B"),
+                metric_card("Modelo da disciplina", "Random Forest B"),
             ], style={
                 "display": "grid",
                 "gridTemplateColumns": "repeat(auto-fit, minmax(180px, 1fr))",
@@ -219,7 +219,7 @@ app.layout = html.Div([
 
             html.Div([
                 html.P(
-                    "A solução K=4 possui grupos com 22, 90, 53 e 20 municípios e silhueta média de 0,3609. "
+                    "A solução K=4 possui grupos com 22, 90, 53 e 20 unidades territoriais e silhueta média de 0,3609. "
                     "K=2 apresentou maior silhueta média (0,4549), mas mostrou-se mais agregador. "
                     "A interpretação considera também esparsidade, tamanho dos grupos e utilidade analítica."
                 ),
@@ -260,11 +260,51 @@ app.layout = html.Div([
             ], style=CARD_STYLE),
         ]),
 
-        dcc.Tab(label="Explicabilidade", children=[
+        dcc.Tab(label="Avaliação científica", children=[
+            html.Div([
+                metric_card("XGBoost A — F1 macro", "53,51%", "Painel completo de 2023–2025"),
+                metric_card("Média móvel 6m — F1 macro", "52,18%", "Mesmo painel completo"),
+                metric_card("Meses sem linha original", "5.368", "20,15% de 26.640 combinações"),
+                metric_card("Unidades territoriais", "185", "184 municípios + Fernando de Noronha"),
+            ], style={"display": "grid", "gridTemplateColumns": "repeat(auto-fit,minmax(210px,1fr))", "gap": "12px", "marginTop": "20px"}),
+            html.Div([
+                html.H3("Experimento retrospectivo: XGBoost versus referências"),
+                dcc.Graph(figure=px.bar(pd.DataFrame({
+                    "Método": ["XGBoost A", "Média móvel 6 meses", "Persistência"],
+                    "F1 macro (%)": [53.51, 52.18, 47.96],
+                }), x="Método", y="F1 macro (%)", text="F1 macro (%)", title="F1 macro — 6.660 observações de teste")),
+                html.P("No subconjunto com 4.862 meses que possuem linha na fonte original, o resultado se inverte: "
+                       "XGBoost 46,28% versus média móvel de seis meses 48,57% (F1 macro). "
+                       "Essa comparação é condicionada à seleção de registros observados."),
+            ], style={**CARD_STYLE, "marginTop": "16px"}),
+            html.Div([
+                html.H3("Perfis K-Means: teste do valor incremental"),
+                dcc.Graph(figure=px.bar(pd.DataFrame({
+                    "Configuração": ["A — sem perfis", "B — grupo K=4", "C — distâncias"],
+                    "F1 macro (%)": [53.49, 53.41, 53.14],
+                }), x="Configuração", y="F1 macro (%)", text="F1 macro (%)", title="Ablação temporal reproduzida — 2023–2025")),
+                html.P("As diferenças pareadas B−A (−0,079 p.p.) e C−A (−0,349 p.p.) possuem intervalos exploratórios "
+                       "que incluem zero. Não foi demonstrado ganho incremental conclusivo; isso não comprova equivalência."),
+            ], style={**CARD_STYLE, "marginTop": "16px"}),
+            html.Div([
+                html.H3("Cobertura e limites de interpretação"),
+                html.P("Das 26.640 células território-mês, 5.368 não tinham linha original na extração e foram codificadas "
+                       "com zero como hipótese operacional. No teste, 1.798 das 2.134 observações da classe Muito Baixo "
+                       "não tinham linha original (84,25%). Ausência de linha não comprova ausência de delitos."),
+                html.P("Em um cenário alternativo de tratamento de ausências, 39,38% dos rótulos de teste mudaram."),
+                html.P("O período 2023–2025 já foi explorado durante o desenvolvimento; os resultados são retrospectivos, "
+                       "não constituem validação prospectiva independente."),
+                html.P("Os resultados de Random Forest/SHAP nas demais abas pertencem ao protocolo da disciplina. "
+                       "Não se deve interpretar seus valores SHAP como explicações do XGBoost."),
+            ], style={**CARD_STYLE, "marginTop": "16px", "marginBottom": "20px"}),
+        ]),
+
+        dcc.Tab(label="Explicabilidade (RF)", children=[
             dcc.Graph(figure=fig_shap),
             html.Div([
                 html.H3("Leitura do SHAP"),
                 html.P(
+                    "Esta explicabilidade refere-se exclusivamente ao Random Forest B da versão da disciplina, não ao XGBoost da avaliação científica. "
                     "As médias móveis de 6 e 3 meses foram os atributos mais relevantes globalmente. "
                     "Meses sem registro, taxa atual e taxas defasadas também tiveram contribuição importante."
                 ),
