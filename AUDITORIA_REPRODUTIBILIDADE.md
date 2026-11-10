@@ -48,3 +48,6 @@ O teste gerou com sucesso CSVs, PNGs e `ADAM_FECHAMENTO_GRAFICOS_RESULTADOS.zip`
 
 ## Inspeção do dashboard publicado
 O arquivo `app.py` usa Plotly Dash e define as tabelas do dashboard como `pd.DataFrame({...})` com valores consolidados **incorporados no próprio código**. Não há leitura automática dos CSVs gerados pelo notebook. Portanto, atualizar o notebook ou o README não atualiza os indicadores exibidos no Render. Isso não é necessariamente um erro: é uma escolha de publicação estática. A atualização do dashboard requer conferência linha a linha dos valores do artigo e dos CSVs antes de modificar `app.py`. Nenhuma alteração foi feita no dashboard.
+
+## Teste automatizado do dashboard
+Foi adicionado `.github/workflows/dashboard-smoke.yml` à branch de revisão. O workflow instala dependências de `requirements.txt`, compila `app.py`, importa a aplicação, verifica dimensões dos principais DataFrames e exige HTTP 200 em `/`. Na consulta posterior à API GitHub Actions, não havia execução registrada (`total_count=0`). **Não declarar teste aprovado até existir um run com sucesso.** A execução integral RF B/SHAP continua pendente.
