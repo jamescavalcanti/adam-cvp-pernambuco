@@ -81,7 +81,7 @@ A aba **Avaliação científica** apresenta os resultados retrospectivos consoli
 
 O arquivo `app.py` é um painel demonstrativo em Plotly Dash, com resultados consolidados **incorporados diretamente no código**. Ele não lê automaticamente os CSVs do Colab e não produz predições em tempo real. A aba de classificação separa o desempenho final do Random Forest B (treino F1 macro 58,03%; teste 53,67%) do baseline de persistência calculado em experimento preliminar distinto. A aba de agrupamento mostra a curva de silhuetas K=2..8 reproduzida a partir dos dados exportados. SHAP refere-se exclusivamente ao RF B.
 
-A branch `revisao-adam-colab-graficos-2026` contém melhorias propostas para o notebook e o painel, submetidas à revisão #1. Não confundir a branch de revisão com a implantação da `main`.
+As melhorias do notebook e do dashboard foram integradas à `main` pela [revisão #1](https://github.com/jamescavalcanti/adam-cvp-pernambuco/pull/1). O teste de importação, integridade das tabelas e HTTP 200 passou no [GitHub Actions](https://github.com/jamescavalcanti/adam-cvp-pernambuco/actions/runs/42743937618). A publicação no Render depende da configuração do serviço e deve ser conferida separadamente.
 
 ## Implantação no Render
 
