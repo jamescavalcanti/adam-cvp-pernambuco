@@ -45,3 +45,6 @@ O teste gerou com sucesso CSVs, PNGs e `ADAM_FECHAMENTO_GRAFICOS_RESULTADOS.zip`
 - `ETAPA_CLASSIFICACAO_DIAGNOSTICO.py` foi executado com sucesso e confirmou as distribuições de classes e o baseline de persistência.
 - `ETAPA_CLASSIFICACAO_MODELOS.py` foi executado com sucesso: Softmax obteve acurácia 0,5341, acurácia balanceada 0,5015 e F1 macro 0,5101; persistência obteve F1 macro 0,4796. **Estes são experimentos preliminares desse script, não o Random Forest B final do artigo.**
 - A etapa final RF B / XGBoost / SHAP **ainda não foi reexecutada**; suas métricas permanecem fundamentadas nos arquivos exportados previamente pelo Colab. Não confundir sucesso do script preliminar com validação completa da especificação B.
+
+## Inspeção do dashboard publicado
+O arquivo `app.py` usa Plotly Dash e define as tabelas do dashboard como `pd.DataFrame({...})` com valores consolidados **incorporados no próprio código**. Não há leitura automática dos CSVs gerados pelo notebook. Portanto, atualizar o notebook ou o README não atualiza os indicadores exibidos no Render. Isso não é necessariamente um erro: é uma escolha de publicação estática. A atualização do dashboard requer conferência linha a linha dos valores do artigo e dos CSVs antes de modificar `app.py`. Nenhuma alteração foi feita no dashboard.
