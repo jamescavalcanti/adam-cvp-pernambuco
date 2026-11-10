@@ -51,3 +51,6 @@ O arquivo `app.py` usa Plotly Dash e define as tabelas do dashboard como `pd.Dat
 
 ## Teste automatizado do dashboard
 Foi adicionado `.github/workflows/dashboard-smoke.yml` à branch de revisão. O workflow instala dependências de `requirements.txt`, compila `app.py`, importa a aplicação, verifica dimensões dos principais DataFrames e exige HTTP 200 em `/`. Na consulta posterior à API GitHub Actions, não havia execução registrada (`total_count=0`). **Não declarar teste aprovado até existir um run com sucesso.** A execução integral RF B/SHAP continua pendente.
+
+## Confirmação do teste automatizado
+GitHub Actions, run [42743937618](https://github.com/jamescavalcanti/adam-cvp-pernambuco/actions/runs/42743937618), **concluído com sucesso**: checkout, instalação de dependências, compilação/importação de `app.py`, verificações de tabelas e resposta HTTP 200. Este é um *smoke test*, não uma avaliação visual nem uma reprodução do RF B/SHAP. A execução local não foi possível porque o ambiente local não possui Dash e não permite instalar pacotes pela rede; a execução no GitHub Actions substitui o teste de importação/HTTP.
