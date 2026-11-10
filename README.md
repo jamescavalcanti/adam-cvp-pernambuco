@@ -39,6 +39,12 @@ Na etapa de classificação foram avaliados:
 
 Também foi utilizada uma regra de persistência como referência.
 
+## Estado da revisão científica (novembro de 2026)
+
+O artigo da disciplina foi revisado para aderência à estrutura do modelo docente (resumo e abstract, introdução, objetivos, referencial teórico, trabalhos relacionados, método, análise exploratória, resultados, discussão e considerações finais). A seção de aplicativo Flutter do modelo não integra o escopo desta pesquisa. A declaração de uso de IA está no artigo, antes das referências.
+
+**Limites de interpretação:** os dados de urbanização de 2010 foram utilizados como covariáveis estruturais fixas; 5.368 combinações território-mês sem linha na extração foram codificadas operacionalmente como zero, sem confirmação de ausência real de crime; os resultados de 2023–2025 são retrospectivos e esse período já foi examinado exploratoriamente. A escolha de K=4 foi interpretativa, não a melhor solução segundo a silhueta média.
+
 ## Principais resultados
 
 A solução de agrupamento adotada identificou quatro perfis, contendo 22, 90, 53 e 20 unidades territoriais (184 municípios e Fernando de Noronha no total).
@@ -50,6 +56,8 @@ No período de teste de 2023 a 2025, o modelo apresentou:
 - Acurácia: **55,17%**
 - Acurácia balanceada: **52,91%**
 - F1 macro: **53,67%**
+
+No treinamento final, o F1 macro foi **58,03%**; a diferença calculada com os valores arredondados é **4,36 pontos percentuais**. A diferença não prova isoladamente sobreajuste. O conjunto de teste contém **6.660 observações**.
 
 A análise de explicabilidade com SHAP indicou predominância das variáveis relacionadas ao histórico recente dos CVP, especialmente médias móveis e taxas recentes.
 
@@ -72,6 +80,12 @@ A aba **Avaliação científica** apresenta os resultados retrospectivos consoli
 ## Implantação no Render
 
 A aplicação existente continua em **Plotly Dash** e usa o mesmo `Procfile` (`web: gunicorn app:server`) e as mesmas dependências. Nenhuma variável de ambiente adicional é exigida por esta alteração. Após revisar as mudanças, execute os testes e então publique na branch conectada ao Render.
+
+## Organização e reprodutibilidade
+
+O notebook contém as etapas experimentais; os resultados do artigo devem ser reproduzidos respeitando o protocolo temporal e as diferenças entre execuções complementares. A inércia e algumas silhuetas de execuções distintas não devem ser combinadas sem conferência das configurações. O SHAP apresentado se refere exclusivamente ao Random Forest B.
+
+A documentação científica não deve ser interpretada como ferramenta operacional de previsão ou classificação prospectiva validada para decisões de segurança pública.
 
 ## Arquivo principal
 
