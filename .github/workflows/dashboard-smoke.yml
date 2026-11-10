@@ -1,0 +1,32 @@
+name: ADAM dashboard smoke test
+on:
+  push:
+    branches: [revisao-adam-colab-graficos-2026]
+  pull_request:
+    branches: [main]
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dashboard dependencies
+        run: pip install -r requirements.txt
+      - name: Compile and import dashboard
+        run: |
+          python -m py_compile app.py
+          python - <<'PY'
+          from app import app, server, perfis, validacao, por_classe
+          assert server is app.server
+          assert len(perfis) == 4
+          assert sum(perfis["Unidades territoriais"]) == 185
+          assert len(validacao) == 8
+          assert len(por_classe) == 5
+          assert abs(float(por_classe.loc[por_classe["Classe"] == "Muito Alto", "F1-score"].iloc[0]) - 0.5333) < 1e-5
+          client = server.test_client()
+          response = client.get("/")
+          assert response.status_code == 200, response.status_code
+          print("ADAM dashboard smoke test OK")
+          PY
