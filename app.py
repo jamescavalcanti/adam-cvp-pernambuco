@@ -236,6 +236,26 @@ app.layout = html.Div([
         ]),
 
         dcc.Tab(label="PP2 — Classificação", children=[
+            html.Div([
+                html.H3("A e B: o mesmo algoritmo, duas entradas diferentes"),
+                html.P("A pergunta experimental é: acrescentar informações sobre o território melhora a classificação do risco no mês seguinte, além do que já sabemos pelo histórico recente de CVP?"),
+                dash_table.DataTable(
+                    data=[
+                        {"Aspecto": "Algoritmo", "Configuração A": "Mesmo algoritmo da família escolhida", "Configuração B": "Mesmo algoritmo da família escolhida"},
+                        {"Aspecto": "Variáveis de entrada", "Configuração A": "Histórico recente de CVP: taxas, defasagens, médias móveis e medidas temporais", "Configuração B": "Variáveis da A + contexto territorial e socioeconômico"},
+                        {"Aspecto": "Objetivo", "Configuração A": "Estabelecer desempenho com histórico de CVP", "Configuração B": "Testar o valor adicional do contexto"},
+                        {"Aspecto": "Interpretação", "Configuração A": "Referência sem contexto adicional", "Configuração B": "Versão enriquecida; melhoria não é garantida"},
+                    ],
+                    columns=[{"name": c, "id": c} for c in ["Aspecto", "Configuração A", "Configuração B"]],
+                    style_table={"overflowX": "auto"},
+                    style_cell={"padding": "12px", "textAlign": "left", "whiteSpace": "normal", "height": "auto", "minWidth": "140px"},
+                    style_header={"fontWeight": "bold", "backgroundColor": "#eaf1f8"},
+                    style_data_conditional=[{"if": {"column_id": "Aspecto"}, "fontWeight": "bold"}],
+                ),
+                html.P("Exemplo: Random Forest A e Random Forest B são dois experimentos com Random Forest, não duas espécies de Random Forest. O mesmo raciocínio vale para Softmax A/B, SVM-RBF A/B e XGBoost A/B."),
+                html.P("Para atribuir eventuais diferenças ao conjunto de atributos, a comparação precisa respeitar a mesma janela temporal e o mesmo protocolo de avaliação. Os resultados de validação 2021–2022 não devem ser confundidos com o teste 2023–2025."),
+                html.P("No conjunto de validação, Random Forest A obteve F1 macro de 52,82% e Random Forest B de 53,40%: ganho descritivo de 0,58 ponto percentual. Esse resultado motivou a escolha de B, mas não demonstra benefício robusto no teste final."),
+            ], style={**CARD_STYLE, "marginTop": "16px", "borderLeft": "4px solid #2563eb"}),
             html.Div([html.H3("Entenda A e B: configurações de atributos"), html.P("A e B não são duas versões do algoritmo Random Forest. São configurações das variáveis fornecidas ao classificador: A utiliza indicadores do histórico recente de CVP; B acrescenta informações contextuais territoriais e socioeconômicas."), html.P("Por isso o gráfico de validação contém Softmax A/B, SVM A/B, Random Forest A/B e XGBoost A/B. A comparação ocorre em 2021–2022, período usado para escolher o modelo; o teste final corresponde a 2023–2025."), html.P("O Random Forest B foi selecionado pela validação temporal, mas o acréscimo de variáveis contextuais não demonstrou ganho robusto no teste final.")], style={**CARD_STYLE, "marginTop": "16px"}),
             html.Div([html.H3("Como interpretar o desempenho"), html.P("Acurácia é a fração de previsões corretas. Acurácia balanceada dá peso igual ao recall de cada classe. F1 macro dá peso igual ao F1 das cinco classes, sendo útil quando suas frequências diferem."), html.P("No teste final (6.660 observações, 2023–2025), o Random Forest B alcançou acurácia de 55,17%, acurácia balanceada de 52,91% e F1 macro de 53,67%. São resultados retrospectivos; o período de teste já foi explorado no desenvolvimento.")], style={**CARD_STYLE, "marginTop": "16px"}),
 
