@@ -1,10 +1,11 @@
 from dash import Dash, dcc, html, dash_table
+import plotly.graph_objects as go
 import pandas as pd
 import plotly.express as px
 
 app = Dash(__name__)
 server = app.server
-app.title = "CVP Pernambuco | ADAM"
+app.title = "ADAM | Inteligência territorial de Pernambuco"
 
 # -----------------------------
 # Dados consolidados do estudo
@@ -133,33 +134,48 @@ fig_shap = px.bar(
 # -----------------------------
 
 CARD_STYLE = {
-    "padding": "18px",
-    "border": "1px solid #dfe3e8",
-    "borderRadius": "12px",
+    "padding": "22px",
+    "border": "1px solid #e2e9f3",
+    "borderRadius": "16px",
     "backgroundColor": "white",
-    "boxShadow": "0 1px 4px rgba(0,0,0,0.06)",
+    "boxShadow": "0 5px 22px rgba(22,42,74,0.045)",
 }
 
 def metric_card(titulo, valor, subtitulo=""):
     return html.Div([
-        html.Div(titulo, style={"fontSize": "14px", "color": "#5f6b7a"}),
-        html.Div(valor, style={"fontSize": "28px", "fontWeight": "700", "marginTop": "6px"}),
+        html.Div(titulo, style={"fontSize": "12px", "fontWeight": "650", "color": "#64748b"}),
+        html.Div(valor, style={"fontSize": "29px", "fontWeight": "800", "color": "#16396b", "marginTop": "6px"}),
         html.Div(subtitulo, style={"fontSize": "12px", "color": "#6b7280", "marginTop": "4px"}),
     ], style=CARD_STYLE)
 
 app.layout = html.Div([
     html.Div([
-        html.H1("Crimes Violentos Contra o Patrimônio em Pernambuco"),
-        html.P(
-            "Agrupamento de municípios e classificação de estados de risco com aprendizado de máquina."
-        ),
-        html.P(
-            "Projeto acadêmico — PPGIA/UFRPE | Dados de 2014 a 2025",
-            style={"color": "#5f6b7a"}
-        ),
-    ], style={"marginBottom": "20px"}),
-
-    html.Div([html.H3("Guia de leitura"), html.P("PP1 investiga perfis territoriais; PP2 avalia a classificação do estado de risco no mês seguinte. Este é um painel científico retrospectivo, não um sistema operacional de previsão em tempo real."), html.P("O painel cobre 185 territórios e 26.640 combinações território-mês de 2014 a 2025. Ausência de linha na extração foi codificada como zero por hipótese operacional, sem comprovar ausência de delitos.")], style={**CARD_STYLE, "marginBottom": "16px"}),
+        html.P("ADAM  /  PESQUISA APLICADA  /  UFRPE", className="dash-eyebrow"),
+        html.H1("Entendendo os padrões de crimes patrimoniais em Pernambuco"),
+        html.P("Um estudo visual e interativo: o que os dados mostram, como os municípios foram agrupados e até onde os modelos de inteligência artificial conseguem classificar o risco no mês seguinte."),
+        html.Div([
+            html.Span("2014–2025", className="dash-chip"),
+            html.Span("185 territórios", className="dash-chip"),
+            html.Span("26.640 observações", className="dash-chip"),
+            html.Span("Pesquisa retrospectiva", className="dash-chip"),
+        ], className="dash-chips"),
+    ], className="dash-hero"),
+    html.P("01  /  VISÃO RÁPIDA DA PESQUISA", className="dash-section-title"),
+    html.Div([
+        metric_card("Territórios analisados", "185", "184 municípios + Fernando de Noronha"),
+        metric_card("Período estudado", "12 anos", "2014 a 2025"),
+        metric_card("Perfis encontrados", "4", "Agrupamento K-Means"),
+        metric_card("F1 macro no teste", "53,67%", "Random Forest B · 2023–2025"),
+    ], style={"display":"grid","gridTemplateColumns":"repeat(auto-fit,minmax(200px,1fr))","gap":"14px","marginBottom":"20px"}),
+    html.Div([
+        html.H3("Comece por aqui: três perguntas para entender o painel"),
+        html.Div([
+            html.Div([html.Strong("01 · O que foi estudado?"), html.P("Registros de crimes violentos contra o patrimônio (CVP) em Pernambuco ao longo de 12 anos.")]),
+            html.Div([html.Strong("02 · O que os algoritmos fizeram?"), html.P("Primeiro, agruparam territórios semelhantes. Depois, tentaram classificar o estado de risco do mês seguinte.")]),
+            html.Div([html.Strong("03 · O que os resultados significam?"), html.P("Os modelos identificaram padrões, mas têm erros e limitações. Não são previsões oficiais de segurança pública.")]),
+        ], style={"display":"grid","gridTemplateColumns":"repeat(auto-fit,minmax(240px,1fr))","gap":"18px"}),
+    ], style={**CARD_STYLE,"marginBottom":"20px"}),
+    html.P("02  /  EXPLORE OS RESULTADOS", className="dash-section-title"),
     dcc.Tabs([
         dcc.Tab(label="Visão geral", children=[
             html.Div([
@@ -359,12 +375,12 @@ app.layout = html.Div([
         "Fonte: microdados da SDS-PE e informações do IBGE. Estados de risco e perfis são construções analíticas deste estudo.",
         style={"fontSize": "12px", "color": "#6b7280"}
     ),
-], style={
-    "maxWidth": "1200px",
+], className="dash-main", style={
+    "maxWidth": "1300px",
     "margin": "0 auto",
-    "padding": "24px",
-    "fontFamily": "Arial, sans-serif",
-    "backgroundColor": "#f8fafc",
+    "padding": "26px",
+    "fontFamily": "Inter, Arial, sans-serif",
+    "backgroundColor": "#f3f6fb",
     "minHeight": "100vh",
 })
 
