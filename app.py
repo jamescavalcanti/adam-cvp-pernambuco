@@ -207,6 +207,9 @@ app.layout = html.Div([
                 "marginTop": "20px",
             }),
 
+            html.H3("Seleção de K e perfis municipais"),
+            dcc.Graph(figure=px.line(pd.DataFrame({"K": [2,3,4,5,6,7,8], "Silhueta média": [0.454948,0.349204,0.360860,0.367515,0.349952,0.337378,0.318648]}), x="K", y="Silhueta média", markers=True, title="Silhueta média por K — fechamento experimental reproduzido")),
+            html.P("K=2 maximiza a silhueta média; K=4 foi adotado por interpretabilidade. K=5 e K=6 produzem ao menos um cluster unitário.", style={"color": "#334155"}),
             html.H3("Perfis municipais"),
             dash_table.DataTable(
                 data=perfis.to_dict("records"),
@@ -234,7 +237,7 @@ app.layout = html.Div([
                 metric_card("Acurácia final", "55,17%"),
                 metric_card("Acurácia balanceada", "52,91%"),
                 metric_card("F1 macro", "53,67%"),
-                metric_card("F1 macro — persistência", "47,96%"),
+                metric_card("F1 macro — treino RF B", "58,03%", "Teste RF B: 53,67%"),
             ], style={
                 "display": "grid",
                 "gridTemplateColumns": "repeat(auto-fit, minmax(180px, 1fr))",
@@ -242,6 +245,7 @@ app.layout = html.Div([
                 "marginTop": "20px",
             }),
 
+            html.Div([html.H3("Generalização do Random Forest B"), html.P("F1 macro no treinamento: 58,03%; no teste de 2023–2025: 53,67% (diferença de 4,36 pontos percentuais, calculada com valores arredondados). A diferença, isoladamente, não comprova sobreajuste."), html.P("O valor de F1 macro 47,96% da persistência pertence ao diagnóstico preliminar; não é uma comparação direta com o teste final RF B.")], style={**CARD_STYLE, "marginTop": "16px"}),
             dcc.Graph(figure=fig_validacao),
             dcc.Graph(figure=fig_classes),
             dcc.Graph(figure=fig_territorio),
@@ -320,6 +324,7 @@ app.layout = html.Div([
     ]),
 
     html.Hr(style={"marginTop": "28px"}),
+    html.P("Painel demonstrativo com métricas consolidadas e incorporadas no código; não realiza predições em tempo real nem consulta diretamente os dados da SDS-PE.", style={"fontSize": "12px", "color": "#475569"}),
     html.P(
         "Fonte: microdados da SDS-PE e informações do IBGE. Estados de risco e perfis são construções analíticas deste estudo.",
         style={"fontSize": "12px", "color": "#6b7280"}
