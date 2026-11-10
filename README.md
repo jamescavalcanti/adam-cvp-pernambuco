@@ -77,6 +77,12 @@ A aba **Avaliação científica** apresenta os resultados retrospectivos consoli
 
 **Atenção:** 5.368 de 26.640 combinações território-mês não possuíam linha na extração e foram codificadas com zero. Isso não demonstra ausência real de crimes. A avaliação de 2023–2025 é retrospectiva e foi previamente explorada; não equivale a uma validação prospectiva intocada. O SHAP disponível no dashboard explica somente o Random Forest B, e não o XGBoost.
 
+## Dashboard de leitura dos resultados
+
+O arquivo `app.py` é um painel demonstrativo em Plotly Dash, com resultados consolidados **incorporados diretamente no código**. Ele não lê automaticamente os CSVs do Colab e não produz predições em tempo real. A aba de classificação separa o desempenho final do Random Forest B (treino F1 macro 58,03%; teste 53,67%) do baseline de persistência calculado em experimento preliminar distinto. A aba de agrupamento mostra a curva de silhuetas K=2..8 reproduzida a partir dos dados exportados. SHAP refere-se exclusivamente ao RF B.
+
+A branch `revisao-adam-colab-graficos-2026` contém melhorias propostas para o notebook e o painel, submetidas à revisão #1. Não confundir a branch de revisão com a implantação da `main`.
+
 ## Implantação no Render
 
 A aplicação existente continua em **Plotly Dash** e usa o mesmo `Procfile` (`web: gunicorn app:server`) e as mesmas dependências. Nenhuma variável de ambiente adicional é exigida por esta alteração. Após revisar as mudanças, execute os testes e então publique na branch conectada ao Render.
