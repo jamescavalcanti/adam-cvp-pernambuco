@@ -38,3 +38,10 @@ Em ambiente Python independente, com o CSV `perfil_municipios_para_clustering.cs
 | 8 | 0,318648 | 121,332249 | 1 |
 
 O teste gerou com sucesso CSVs, PNGs e `ADAM_FECHAMENTO_GRAFICOS_RESULTADOS.zip`. Os tamanhos de K4 foram 53, 20, 22 e 90. Esta validação **não equivale à execução integral do notebook**, que inclui integração populacional, treinamento, avaliação e SHAP. Os dados processados necessários existem no pacote de resultados recuperados, mas não no ZIP original de entrada; não foram adicionados ao repositório público.
+
+## Execução independente adicional — preparação e modelos preliminares
+- Foi montado ambiente local com `ADAM_COLAB_PACOTE_COMPLETO_VALIDACAO.zip`, contendo os dados preparados e scripts originais.
+- A sintaxe Python de todas as células do notebook consolidado foi validada por AST (ignorando somente a sintaxe de instalação `!pip` específica do Colab): **sem erros**.
+- `ETAPA_CLASSIFICACAO_DIAGNOSTICO.py` foi executado com sucesso e confirmou as distribuições de classes e o baseline de persistência.
+- `ETAPA_CLASSIFICACAO_MODELOS.py` foi executado com sucesso: Softmax obteve acurácia 0,5341, acurácia balanceada 0,5015 e F1 macro 0,5101; persistência obteve F1 macro 0,4796. **Estes são experimentos preliminares desse script, não o Random Forest B final do artigo.**
+- A etapa final RF B / XGBoost / SHAP **ainda não foi reexecutada**; suas métricas permanecem fundamentadas nos arquivos exportados previamente pelo Colab. Não confundir sucesso do script preliminar com validação completa da especificação B.
