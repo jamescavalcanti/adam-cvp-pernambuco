@@ -159,6 +159,7 @@ app.layout = html.Div([
         ),
     ], style={"marginBottom": "20px"}),
 
+    html.Div([html.H3("Guia de leitura"), html.P("PP1 investiga perfis territoriais; PP2 avalia a classificação do estado de risco no mês seguinte. Este é um painel científico retrospectivo, não um sistema operacional de previsão em tempo real."), html.P("O painel cobre 185 territórios e 26.640 combinações território-mês de 2014 a 2025. Ausência de linha na extração foi codificada como zero por hipótese operacional, sem comprovar ausência de delitos.")], style={**CARD_STYLE, "marginBottom": "16px"}),
     dcc.Tabs([
         dcc.Tab(label="Visão geral", children=[
             html.Div([
@@ -197,6 +198,8 @@ app.layout = html.Div([
         ]),
 
         dcc.Tab(label="PP1 — Agrupamento", children=[
+            html.Div([html.H3("Método: como os perfis foram obtidos"), html.P("O K-Means reúne territórios com padrões temporais semelhantes de CVP, após padronização das variáveis para evitar que escalas diferentes dominem a distância."), html.P("A silhueta avalia a separação e a coesão dos grupos. K=2 alcançou 0,4549, maior que K=4 (0,3609). A escolha de K=4 privilegia a interpretação de quatro perfis, não o máximo da silhueta."), html.P("Os perfis descrevem comportamentos estatísticos. Eles não classificam automaticamente municípios como seguros ou perigosos.")], style={**CARD_STYLE, "marginTop": "16px"}),
+
             html.Div([
                 html.Div(dcc.Graph(figure=fig_perfis_taxa)),
                 html.Div(dcc.Graph(figure=fig_perfis_zero)),
@@ -233,6 +236,9 @@ app.layout = html.Div([
         ]),
 
         dcc.Tab(label="PP2 — Classificação", children=[
+            html.Div([html.H3("Entenda A e B: configurações de atributos"), html.P("A e B não são duas versões do algoritmo Random Forest. São configurações das variáveis fornecidas ao classificador: A utiliza indicadores do histórico recente de CVP; B acrescenta informações contextuais territoriais e socioeconômicas."), html.P("Por isso o gráfico de validação contém Softmax A/B, SVM A/B, Random Forest A/B e XGBoost A/B. A comparação ocorre em 2021–2022, período usado para escolher o modelo; o teste final corresponde a 2023–2025."), html.P("O Random Forest B foi selecionado pela validação temporal, mas o acréscimo de variáveis contextuais não demonstrou ganho robusto no teste final.")], style={**CARD_STYLE, "marginTop": "16px"}),
+            html.Div([html.H3("Como interpretar o desempenho"), html.P("Acurácia é a fração de previsões corretas. Acurácia balanceada dá peso igual ao recall de cada classe. F1 macro dá peso igual ao F1 das cinco classes, sendo útil quando suas frequências diferem."), html.P("No teste final (6.660 observações, 2023–2025), o Random Forest B alcançou acurácia de 55,17%, acurácia balanceada de 52,91% e F1 macro de 53,67%. São resultados retrospectivos; o período de teste já foi explorado no desenvolvimento.")], style={**CARD_STYLE, "marginTop": "16px"}),
+
             html.Div([
                 metric_card("Acurácia final", "55,17%"),
                 metric_card("Acurácia balanceada", "52,91%"),
@@ -265,6 +271,8 @@ app.layout = html.Div([
         ]),
 
         dcc.Tab(label="Avaliação científica", children=[
+            html.Div([html.H3("O que esta avaliação complementar demonstra"), html.P("O XGBoost A e a média móvel foram examinados em experimento complementar, com protocolo distinto do Random Forest B. Portanto, não devem ser comparados como se todos os números fossem do mesmo ensaio."), html.P("No painel completo, XGBoost A: 53,51% de F1 macro; média móvel: 52,18%. No subconjunto com linha original, a ordem se inverte: 46,28% versus 48,57%. A dependência do tratamento de registros ausentes limita a interpretação."), html.P("A inclusão de perfis K-Means como atributos não apresentou ganho incremental conclusivo.")], style={**CARD_STYLE, "marginTop": "16px"}),
+
             html.Div([
                 metric_card("XGBoost A — F1 macro", "53,51%", "Painel completo de 2023–2025"),
                 metric_card("Média móvel 6m — F1 macro", "52,18%", "Mesmo painel completo"),
@@ -304,6 +312,8 @@ app.layout = html.Div([
         ]),
 
         dcc.Tab(label="Explicabilidade (RF)", children=[
+            html.Div([html.H3("O que o SHAP explica"), html.P("Este gráfico apresenta a importância global média absoluta dos atributos no Random Forest B, não no XGBoost. Valores maiores indicam maior influência média nas previsões, sem informar a direção do efeito."), html.P("As médias móveis de seis e três meses se destacaram. SHAP descreve o comportamento do modelo, não comprova causalidade ou a existência de fatores determinantes dos crimes."), html.P("Urbanização e densidade utilizam referências históricas, não medições anuais atualizadas.")], style={**CARD_STYLE, "marginTop": "16px"}),
+
             dcc.Graph(figure=fig_shap),
             html.Div([
                 html.H3("Leitura do SHAP"),
