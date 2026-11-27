@@ -38,16 +38,7 @@ def make_map(d):
  geo=json.loads(path.read_text(encoding='utf-8'))
  agg=d.groupby(['COD_IBGE','MUNICIPIO'],as_index=False).agg(CVP=('TOTAL_CVP','sum'),pop=('POPULACAO_ANO','sum'))
  agg['Taxa média mensal']=agg.CVP/agg['pop']*100000
- agg['codigo']=agg.COD_IBGE.astype(str).str.replace(r'\.0@callback(Output('metrics','children'),Output('series','figure'),Output('ranking','figure'),Output('map','figure'),Input('region','value'),Input('city','value'),Input('profile','value'),Input('year-start','value'),Input('year-end','value'))
-def update(r,c,p,start,end):
- y=sorted([start,end])
- d=filtered(r,c,p,y); monthly=d.groupby('DATA_MES',as_index=False).agg(CVP=('TOTAL_CVP','sum'),Pop=('POPULACAO_ANO','sum')); monthly['Taxa por 100 mil']=monthly.CVP/monthly.Pop*100000
- rank=d.groupby('MUNICIPIO',as_index=False).TOTAL_CVP.sum().nlargest(15,'TOTAL_CVP').sort_values('TOTAL_CVP')
- return [card('Ocorrências',f'{d.TOTAL_CVP.sum():,}'.replace(',','.')),card('Territórios',d.MUNICIPIO.nunique()),card('Observações',len(d))],px.line(monthly,x='DATA_MES',y='Taxa por 100 mil',title='Taxa mensal agregada por 100 mil habitantes'),px.bar(rank,x='TOTAL_CVP',y='MUNICIPIO',orientation='h',title='15 territórios com mais registros no recorte'),make_map(d)
-@callback(Output('download','data'),Input('export','n_clicks'),State('region','value'),State('city','value'),State('profile','value'),State('year-start','value'),State('year-end','value'),prevent_initial_call=True)
-def download(n,r,c,p,start,end): return dcc.send_data_frame(filtered(r,c,p,sorted([start,end])).to_csv,'adam_recorte.csv',index=False,sep=';')
-if __name__=='__main__': app.run(debug=False)
-, '', regex=True).str.zfill(7)
+ agg['codigo']=agg.COD_IBGE.astype(float).astype(int).astype(str).str.zfill(7)
  geo['features']=[f for f in geo['features'] if str(f['properties']['codarea']) in set(agg.codigo)]
  if not geo['features']:
   fig=go.Figure(); fig.add_annotation(text='Não foi possível associar os códigos municipais à malha.',showarrow=False); return fig
