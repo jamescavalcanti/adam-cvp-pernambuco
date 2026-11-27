@@ -1,42 +1,45 @@
-# CVP em Pernambuco | Aprendizado de Máquina
+<div align="center">
 
-**PPGIA · UFRPE · Disciplina de Aprendizado de Máquina**
+# Crimes Violentos contra o Patrimônio em Pernambuco
 
-Uma abordagem de aprendizado de máquina para o agrupamento de municípios e a classificação de estados de risco de crimes violentos contra o patrimônio em Pernambuco.
+**Agrupamento territorial e classificação de estados de risco com aprendizado de máquina**
 
-![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white) ![Plotly Dash](https://img.shields.io/badge/Plotly-Dash-119DFF) ![Google Colab](https://img.shields.io/badge/Google-Colab-F9AB00)
+PPGIA · Universidade Federal Rural de Pernambuco
 
-[**Acessar dashboard**](https://adam-cvp-pernambuco.onrender.com/) · [**Abrir notebook no Colab**](https://colab.research.google.com/github/jamescavalcanti/adam-cvp-pernambuco/blob/main/ADAM_CVP_Pernambuco.ipynb)
+[![Dashboard](https://img.shields.io/badge/Explorar-Dashboard-176B87?style=for-the-badge&logo=plotly&logoColor=white)](https://adam-cvp-pernambuco.onrender.com/)
+[![Colab](https://img.shields.io/badge/Abrir-Notebook-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/jamescavalcanti/adam-cvp-pernambuco/blob/main/ADAM_CVP_Pernambuco.ipynb)
 
-## A pesquisa em números
+<br>
 
-| Período | Territórios | Observações | Registros de CVP |
-|:---:|:---:|:---:|:---:|
 | 2014–2025 | 185 | 26.640 | 834.398 |
+|:---:|:---:|:---:|:---:|
+| Período | Territórios | Observações | Ocorrências |
 
-**Fontes:** SDS-PE e IBGE.
+*SDS-PE · IBGE*
 
-## Principais resultados
+</div>
 
-- **Agrupamento:** quatro perfis históricos com K-Means (escolha interpretativa).
-- **Classificação:** Random Forest B com F1 macro de 53,67% no teste temporal.
-- **Explicabilidade:** análise SHAP dos atributos do Random Forest B.
+## Resultados
 
-## Explore o projeto
+| Agrupamento | Classificação | Explicabilidade |
+|:---:|:---:|:---:|
+| **4 perfis** | **53,67% F1 macro** | **SHAP** |
+| K-Means | Random Forest B · teste temporal | Importância dos atributos |
 
-| Material | Conteúdo |
-|---|---|
-| [Notebook](ADAM_CVP_Pernambuco.ipynb) | Metodologia, experimentos e gráficos |
-| [Dados](data/) | Bases, resultados e malha geográfica |
-| [Aplicação](app.py) | Dashboard interativo em Plotly Dash |
-| [Interface](assets/) | Estilos visuais |
-| [Testes](tests/) | Validação automatizada |
-| [Auditoria](AUDITORIA_REPRODUTIBILIDADE.md) | Evidências e limites de reprodução |
-| [Histórico](NOTAS_ATUALIZACAO.md) | Evolução do projeto |
+## Materiais da pesquisa
 
-## Execute localmente
+📓 [**Notebook científico**](ADAM_CVP_Pernambuco.ipynb) — metodologia, experimentos e gráficos
 
-Python 3.11:
+📊 [**Bases e resultados**](data/) — dados agregados e malha territorial
+
+🖥️ [**Aplicação Dash**](app.py) · [Interface](assets/) · [Testes](tests/)
+
+📄 [**Auditoria científica**](AUDITORIA_REPRODUTIBILIDADE.md) · [Histórico de atualizações](NOTAS_ATUALIZACAO.md)
+
+<details>
+<summary>Execução local e detalhes técnicos</summary>
+
+Python 3.11 ou superior:
 
 ```bash
 pip install -r requirements.txt
@@ -45,4 +48,21 @@ python app.py
 
 Acesse http://127.0.0.1:8050. Testes: `python -m tests.smoke`.
 
-> O painel apresenta resultados retrospectivos, não previsões em tempo real. Os perfis e classes são analíticos, não classificações oficiais. Ausência de registro não comprova ausência de crime. A reprodução integral dos experimentos tem limitações descritas na auditoria.
+A malha territorial pode ser atualizada com `prepare_map.py`.
+
+</details>
+
+<details>
+<summary>Limitações científicas</summary>
+
+K=4 é uma escolha interpretativa, não o máximo da silhueta. O painel apresenta resultados retrospectivos, não previsões em tempo real. Os filtros não recalculam modelos. As classes são analíticas, não classificações oficiais. Ausência de registro não comprova ausência de crime. SHAP não estabelece causalidade. A reprodução integral dos experimentos tem limitações descritas na auditoria.
+
+</details>
+
+---
+
+<div align="center">
+
+Python · Plotly Dash · Pandas · Scikit-learn
+
+</div>
