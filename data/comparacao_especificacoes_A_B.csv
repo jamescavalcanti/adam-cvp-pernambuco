@@ -1,0 +1,9 @@
+Modelo;Especificação;Acurácia;Balanced Accuracy;F1 Macro
+Random Forest;A;52.16;52.71;52.82
+Random Forest;B;52.68;53.39;53.4
+SVM-RBF;A;51.1;51.74;51.98
+SVM-RBF;B;51.26;52.09;52.09
+Softmax;A;51.91;52.89;52.4
+Softmax;B;51.46;52.59;52.14
+XGBoost;A;51.98;52.78;52.7
+XGBoost;B;51.44;52.54;52.32

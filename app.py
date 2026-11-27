@@ -1,388 +1,52 @@
-from dash import Dash, dcc, html, dash_table
-import plotly.graph_objects as go
+from pathlib import Path
 import pandas as pd
+import json
+import plotly.graph_objects as go
 import plotly.express as px
+from dash import Dash, dcc, html, Input, Output, State, callback, dash_table
 
-app = Dash(__name__)
-server = app.server
-app.title = "ADAM | Inteligência territorial de Pernambuco"
+ROOT=Path(__file__).parent/'data'
+def load(name): return pd.read_csv(ROOT/(name+'.csv'),sep=';')
+base=load('base_municipio_mes_com_taxa')
+base['DATA_MES']=pd.to_datetime(base.DATA_MES)
+clusters=load('municipios_clusters_k4')
+base=base.merge(clusters[['MUNICIPIO','PERFIL_K4']],on='MUNICIPIO',validate='many_to_one')
+models=load('comparacao_especificacoes_A_B')
+shap=load('importancia_SHAP_RF_B')
+k=load('avaliacao_k_clustering')
+app=Dash(__name__); server=app.server
+app.title='ADAM 2.0 | Pernambuco'
+def graph(fig): return dcc.Graph(figure=fig,config={'displaylogo':False})
+def table(df): return dash_table.DataTable(data=df.to_dict('records'),columns=[{'name':c,'id':c} for c in df],page_size=12,style_table={'overflowX':'auto'},style_cell={'textAlign':'left','padding':'8px'})
+def options(s): return [{'label':str(x),'value':x} for x in sorted(s.unique())]
+def card(label,value): return html.Div([html.Small(label),html.H2(value)],className='metric')
+app.layout=html.Div([html.Header([html.H1('ADAM 2.0'),html.P('Inteligência territorial • CVP em Pernambuco • 2014–2025 | Pesquisa aplicada UFRPE')]),dcc.Tabs([
+ dcc.Tab(label='Exploração territorial',children=[html.Div([html.Div(['Região',dcc.Dropdown(options(base.REGIAO),multi=True,id='region')]),html.Div(['Município',dcc.Dropdown(options(base.MUNICIPIO),multi=True,id='city')]),html.Div(['Perfil histórico K=4',dcc.Dropdown(options(base.PERFIL_K4),multi=True,id='profile')]),html.Div(['Período',dcc.RangeSlider(2014,2025,1,value=[2014,2025],marks={i:str(i) for i in range(2014,2026)},id='years')])],className='filters'),html.Div(id='metrics',className='metrics'),dcc.Graph(id='map'),dcc.Graph(id='series'),dcc.Graph(id='ranking'),html.Button('Exportar recorte CSV',id='export'),dcc.Download(id='download')]),
+ dcc.Tab(label='Agrupamentos',children=[html.P('Perfis históricos fixos; K=4 escolhido por interpretação, não pela maior silhueta.'),graph(px.bar(clusters.groupby('PERFIL_K4',as_index=False).size(),x='PERFIL_K4',y='size',title='Territórios por perfil')),graph(px.line(k,x='K',y='SILHUETA_MEDIA',markers=True,title='Sensibilidade ao número de grupos')),graph(px.line(k,x='K',y='INERCIA',markers=True,title='Método do cotovelo')),table(clusters)]),
+ dcc.Tab(label='Modelos de IA',children=[html.P('Resultados exportados da validação temporal 2021–2022; não são previsões em tempo real.'),graph(px.bar(models,x='Modelo',y='F1 Macro',color='Especificação',barmode='group',title='F1 macro (%) — validação')),table(models),html.H3('Teste RF B — métricas por classe'),table(load('metricas_por_classe_RF_B')),html.H3('Desempenho territorial'),table(load('desempenho_territorial_RF_B'))]),
+ dcc.Tab(label='Explicabilidade',children=[html.P('Importância global SHAP: associação com a saída do modelo, não causalidade.'),graph(px.bar(shap.sort_values('Importância SHAP média'),x='Importância SHAP média',y='Variável',orientation='h',height=700))]),
+ dcc.Tab(label='Metodologia',children=[html.H2('Sobre a pesquisa'),html.P('Fontes: SDS-PE e IBGE. Painel retrospectivo de 184 municípios e Fernando de Noronha. Agrupamento K-Means e classificação do mês seguinte. Resultados históricos exportados do notebook; não houve novo treinamento nesta versão.'),html.P('A taxa agregada mensal é a soma de ocorrências dividida pela soma das populações do mês, multiplicada por 100 mil. Os filtros não recalculam os modelos ou perfis. Zero registrado não comprova ausência de crime.')])])],className='shell')
+def filtered(regions,cities,profiles,years):
+ d=base[base.ANO.between(*years)]
+ for col,values in [('REGIAO',regions),('MUNICIPIO',cities),('PERFIL_K4',profiles)]:
+  if values: d=d[d[col].isin(values)]
+ return d
+def make_map(d):
+ path=ROOT/'pernambuco.geojson'
+ if not path.exists():
+  fig=go.Figure(); fig.add_annotation(text='Malha municipal IBGE ainda não instalada.',showarrow=False); fig.update_layout(xaxis_visible=False,yaxis_visible=False,height=300); return fig
+ geo=json.loads(path.read_text(encoding='utf-8'))
+ agg=d.groupby(['COD_IBGE','MUNICIPIO'],as_index=False).agg(CVP=('TOTAL_CVP','sum'),pop=('POPULACAO_ANO','sum'))
+ agg['Taxa média mensal']=agg.CVP/agg['pop']*100000
+ agg['codigo']=agg.COD_IBGE.astype(str)
+ fig=px.choropleth(agg,geojson=geo,locations='codigo',featureidkey='properties.codarea',color='Taxa média mensal',hover_name='MUNICIPIO',hover_data=['CVP'],title='Taxa mensal por 100 mil habitantes no recorte',color_continuous_scale='Blues')
+ fig.update_geos(fitbounds='locations',visible=False); fig.update_layout(height=500,margin=dict(l=10,r=10,t=60,b=10)); return fig
 
-# -----------------------------
-# Dados consolidados do estudo
-# -----------------------------
-
-perfis = pd.DataFrame({
-    "Perfil": ["Perfil 1", "Perfil 2", "Perfil 3", "Perfil 4"],
-    "Unidades territoriais": [22, 90, 53, 20],
-    "Taxa média": [3.64, 13.71, 38.62, 77.91],
-    "Coef. variação": [2.21, 0.95, 0.69, 0.56],
-    "Tendência": [-0.02, -0.06, -0.25, -0.61],
-    "Amplitude sazonal": [6.30, 9.39, 18.40, 23.48],
-    "% meses zero": [72.63, 21.40, 3.79, 0.17],
-})
-
-validacao = pd.DataFrame({
-    "Modelo": [
-        "Softmax A", "Softmax B",
-        "SVM-RBF A", "SVM-RBF B",
-        "Random Forest A", "Random Forest B",
-        "XGBoost A", "XGBoost B"
-    ],
-    "Acurácia": [51.91, 51.46, 51.10, 51.26, 52.16, 52.68, 51.98, 51.44],
-    "Acurácia balanceada": [52.89, 52.59, 51.74, 52.09, 52.71, 53.39, 52.78, 52.54],
-    "F1 macro": [52.40, 52.14, 51.98, 52.09, 52.82, 53.40, 52.70, 52.32],
-})
-
-por_classe = pd.DataFrame({
-    "Classe": ["Muito Baixo", "Baixo", "Médio", "Alto", "Muito Alto"],
-    "Precisão": [0.6859, 0.4636, 0.4307, 0.5475, 0.6207],
-    "Recall": [0.7202, 0.4163, 0.4451, 0.5962, 0.4675],
-    "F1-score": [0.7026, 0.4387, 0.4378, 0.5708, 0.5333],
-    "Suporte": [2134, 1715, 1411, 1092, 308],
-})
-
-territorio = pd.DataFrame({
-    "Contexto": ["RMR", "Interior"],
-    "Acurácia": [65.67, 54.07],
-    "Acurácia balanceada": [51.53, 48.23],
-    "F1 macro": [53.44, 49.25],
-})
-
-shap = pd.DataFrame({
-    "Atributo": [
-        "Média móvel de 6 meses",
-        "Média móvel de 3 meses",
-        "Meses sem registro nos últimos 6 meses",
-        "Taxa atual",
-        "Taxa defasada em 1 mês",
-        "Taxa defasada em 2 meses",
-        "Log da densidade demográfica",
-        "Urbanização de 2010",
-        "Região — Sertão",
-        "Desvio-padrão de 6 meses",
-        "Log do PIB per capita relativo",
-    ],
-    "SHAP médio absoluto": [
-        0.044406, 0.034264, 0.022202, 0.022195, 0.016656, 0.015003,
-        0.010302, 0.006913, 0.006461, 0.005612, 0.004761
-    ]
-})
-
-# -----------------------------
-# Figuras
-# -----------------------------
-
-fig_perfis_taxa = px.bar(
-    perfis, x="Perfil", y="Taxa média",
-    title="Taxa média mensal por perfil"
-)
-fig_perfis_zero = px.bar(
-    perfis, x="Perfil", y="% meses zero",
-    title="Esparsidade observada no painel"
-)
-
-validacao_long = validacao.melt(
-    id_vars="Modelo",
-    value_vars=["Acurácia", "Acurácia balanceada", "F1 macro"],
-    var_name="Métrica",
-    value_name="Valor (%)"
-)
-fig_validacao = px.bar(
-    validacao_long,
-    x="Modelo", y="Valor (%)", color="Métrica",
-    barmode="group",
-    title="Validação temporal 2021–2022"
-)
-fig_validacao.update_layout(xaxis_tickangle=-35)
-
-classe_long = por_classe.melt(
-    id_vars=["Classe", "Suporte"],
-    value_vars=["Precisão", "Recall", "F1-score"],
-    var_name="Métrica",
-    value_name="Valor"
-)
-fig_classes = px.bar(
-    classe_long,
-    x="Classe", y="Valor", color="Métrica",
-    barmode="group",
-    title="Desempenho por classe — teste 2023–2025"
-)
-fig_classes.update_yaxes(range=[0, 1])
-
-territorio_long = territorio.melt(
-    id_vars="Contexto",
-    value_vars=["Acurácia", "Acurácia balanceada", "F1 macro"],
-    var_name="Métrica",
-    value_name="Valor (%)"
-)
-fig_territorio = px.bar(
-    territorio_long,
-    x="Contexto", y="Valor (%)", color="Métrica",
-    barmode="group",
-    title="Desempenho por contexto territorial"
-)
-
-fig_shap = px.bar(
-    shap.sort_values("SHAP médio absoluto"),
-    x="SHAP médio absoluto", y="Atributo",
-    orientation="h",
-    title="Importância global dos atributos — SHAP"
-)
-
-# -----------------------------
-# Componentes
-# -----------------------------
-
-CARD_STYLE = {
-    "padding": "22px",
-    "border": "1px solid #e2e9f3",
-    "borderRadius": "16px",
-    "backgroundColor": "white",
-    "boxShadow": "0 5px 22px rgba(22,42,74,0.045)",
-}
-
-def metric_card(titulo, valor, subtitulo=""):
-    return html.Div([
-        html.Div(titulo, style={"fontSize": "12px", "fontWeight": "650", "color": "#64748b"}),
-        html.Div(valor, style={"fontSize": "29px", "fontWeight": "800", "color": "#16396b", "marginTop": "6px"}),
-        html.Div(subtitulo, style={"fontSize": "12px", "color": "#6b7280", "marginTop": "4px"}),
-    ], style=CARD_STYLE)
-
-app.layout = html.Div([
-    html.Div([
-        html.P("ADAM  /  PESQUISA APLICADA  /  UFRPE", className="dash-eyebrow"),
-        html.H1("Entendendo os padrões de crimes patrimoniais em Pernambuco"),
-        html.P("Um estudo visual e interativo: o que os dados mostram, como os municípios foram agrupados e até onde os modelos de inteligência artificial conseguem classificar o risco no mês seguinte."),
-        html.Div([
-            html.Span("2014–2025", className="dash-chip"),
-            html.Span("185 territórios", className="dash-chip"),
-            html.Span("26.640 observações", className="dash-chip"),
-            html.Span("Pesquisa retrospectiva", className="dash-chip"),
-        ], className="dash-chips"),
-    ], className="dash-hero"),
-    html.P("01  /  VISÃO RÁPIDA DA PESQUISA", className="dash-section-title"),
-    html.Div([
-        metric_card("Territórios analisados", "185", "184 municípios + Fernando de Noronha"),
-        metric_card("Período estudado", "12 anos", "2014 a 2025"),
-        metric_card("Perfis encontrados", "4", "Agrupamento K-Means"),
-        metric_card("F1 macro no teste", "53,67%", "Random Forest B · 2023–2025"),
-    ], style={"display":"grid","gridTemplateColumns":"repeat(auto-fit,minmax(200px,1fr))","gap":"14px","marginBottom":"20px"}),
-    html.Div([
-        html.H3("Comece por aqui: três perguntas para entender o painel"),
-        html.Div([
-            html.Div([html.Strong("01 · O que foi estudado?"), html.P("Registros de crimes violentos contra o patrimônio (CVP) em Pernambuco ao longo de 12 anos.")]),
-            html.Div([html.Strong("02 · O que os algoritmos fizeram?"), html.P("Primeiro, agruparam territórios semelhantes. Depois, tentaram classificar o estado de risco do mês seguinte.")]),
-            html.Div([html.Strong("03 · O que os resultados significam?"), html.P("Os modelos identificaram padrões, mas têm erros e limitações. Não são previsões oficiais de segurança pública.")]),
-        ], style={"display":"grid","gridTemplateColumns":"repeat(auto-fit,minmax(240px,1fr))","gap":"18px"}),
-    ], style={**CARD_STYLE,"marginBottom":"20px"}),
-    html.P("02  /  EXPLORE OS RESULTADOS", className="dash-section-title"),
-    dcc.Tabs([
-        dcc.Tab(label="Visão geral", children=[
-            html.Div([
-                metric_card("Painel analítico", "26.640", "observações município-mês"),
-                metric_card("Unidades territoriais", "185", "184 municípios + Fernando de Noronha"),
-                metric_card("Ocorrências de CVP", "834.398", "2014–2025"),
-                metric_card("Modelo da disciplina", "Random Forest B"),
-            ], style={
-                "display": "grid",
-                "gridTemplateColumns": "repeat(auto-fit, minmax(180px, 1fr))",
-                "gap": "12px",
-                "marginTop": "20px",
-                "marginBottom": "22px",
-            }),
-
-            html.Div([
-                html.H3("Perguntas de pesquisa"),
-                html.P([
-                    html.Strong("PP1: "),
-                    "É possível identificar perfis distintos de municípios pernambucanos quanto ao comportamento dos Crimes Violentos Contra o Patrimônio por meio de técnicas de agrupamento?"
-                ]),
-                html.P([
-                    html.Strong("PP2: "),
-                    "Com que desempenho modelos de aprendizado supervisionado conseguem classificar o estado de risco de CVP no mês seguinte a partir do comportamento histórico recente dos municípios?"
-                ]),
-            ], style=CARD_STYLE),
-
-            html.Div([
-                html.H3("Síntese dos resultados"),
-                html.P(
-                    "Na etapa não supervisionada, K=4 foi adotado como solução principal por oferecer maior resolução interpretativa, "
-                    "apesar de K=2 apresentar a maior silhueta média. Na etapa supervisionada, o Random Forest enriquecido com variáveis "
-                    "contextuais foi selecionado por validação temporal."
-                ),
-            ], style={**CARD_STYLE, "marginTop": "16px"}),
-        ]),
-
-        dcc.Tab(label="PP1 — Agrupamento", children=[
-            html.Div([html.H3("Método: como os perfis foram obtidos"), html.P("O K-Means reúne territórios com padrões temporais semelhantes de CVP, após padronização das variáveis para evitar que escalas diferentes dominem a distância."), html.P("A silhueta avalia a separação e a coesão dos grupos. K=2 alcançou 0,4549, maior que K=4 (0,3609). A escolha de K=4 privilegia a interpretação de quatro perfis, não o máximo da silhueta."), html.P("Os perfis descrevem comportamentos estatísticos. Eles não classificam automaticamente municípios como seguros ou perigosos.")], style={**CARD_STYLE, "marginTop": "16px"}),
-
-            html.Div([
-                html.Div(dcc.Graph(figure=fig_perfis_taxa)),
-                html.Div(dcc.Graph(figure=fig_perfis_zero)),
-            ], style={
-                "display": "grid",
-                "gridTemplateColumns": "repeat(auto-fit, minmax(380px, 1fr))",
-                "gap": "12px",
-                "marginTop": "20px",
-            }),
-
-            html.H3("Seleção de K e perfis municipais"),
-            dcc.Graph(figure=px.line(pd.DataFrame({"K": [2,3,4,5,6,7,8], "Silhueta média": [0.454948,0.349204,0.360860,0.367515,0.349952,0.337378,0.318648]}), x="K", y="Silhueta média", markers=True, title="Silhueta média por K — fechamento experimental reproduzido")),
-            html.P("K=2 maximiza a silhueta média; K=4 foi adotado por interpretabilidade. K=5 e K=6 produzem ao menos um cluster unitário.", style={"color": "#334155"}),
-            html.H3("Perfis municipais"),
-            dash_table.DataTable(
-                data=perfis.to_dict("records"),
-                columns=[{"name": c, "id": c} for c in perfis.columns],
-                page_size=10,
-                style_table={"overflowX": "auto"},
-                style_cell={"padding": "8px", "textAlign": "center"},
-                style_header={"fontWeight": "bold"},
-            ),
-
-            html.Div([
-                html.P(
-                    "A solução K=4 possui grupos com 22, 90, 53 e 20 unidades territoriais e silhueta média de 0,3609. "
-                    "K=2 apresentou maior silhueta média (0,4549), mas mostrou-se mais agregador. "
-                    "A interpretação considera também esparsidade, tamanho dos grupos e utilidade analítica."
-                ),
-                html.P(
-                    "O Perfil 1 apresenta forte esparsidade no painel e não deve ser interpretado automaticamente como um grupo de municípios seguros."
-                )
-            ], style={**CARD_STYLE, "marginTop": "18px"}),
-        ]),
-
-        dcc.Tab(label="PP2 — Classificação", children=[
-            html.Div([
-                html.H3("A e B: o mesmo algoritmo, duas entradas diferentes"),
-                html.P("A pergunta experimental é: acrescentar informações sobre o território melhora a classificação do risco no mês seguinte, além do que já sabemos pelo histórico recente de CVP?"),
-                dash_table.DataTable(
-                    data=[
-                        {"Aspecto": "Algoritmo", "Configuração A": "Mesmo algoritmo da família escolhida", "Configuração B": "Mesmo algoritmo da família escolhida"},
-                        {"Aspecto": "Variáveis de entrada", "Configuração A": "Histórico recente de CVP: taxas, defasagens, médias móveis e medidas temporais", "Configuração B": "Variáveis da A + contexto territorial e socioeconômico"},
-                        {"Aspecto": "Objetivo", "Configuração A": "Estabelecer desempenho com histórico de CVP", "Configuração B": "Testar o valor adicional do contexto"},
-                        {"Aspecto": "Interpretação", "Configuração A": "Referência sem contexto adicional", "Configuração B": "Versão enriquecida; melhoria não é garantida"},
-                    ],
-                    columns=[{"name": c, "id": c} for c in ["Aspecto", "Configuração A", "Configuração B"]],
-                    style_table={"overflowX": "auto"},
-                    style_cell={"padding": "12px", "textAlign": "left", "whiteSpace": "normal", "height": "auto", "minWidth": "140px"},
-                    style_header={"fontWeight": "bold", "backgroundColor": "#eaf1f8"},
-                    style_data_conditional=[{"if": {"column_id": "Aspecto"}, "fontWeight": "bold"}],
-                ),
-                html.P("Exemplo: Random Forest A e Random Forest B são dois experimentos com Random Forest, não duas espécies de Random Forest. O mesmo raciocínio vale para Softmax A/B, SVM-RBF A/B e XGBoost A/B."),
-                html.P("Para atribuir eventuais diferenças ao conjunto de atributos, a comparação precisa respeitar a mesma janela temporal e o mesmo protocolo de avaliação. Os resultados de validação 2021–2022 não devem ser confundidos com o teste 2023–2025."),
-                html.P("No conjunto de validação, Random Forest A obteve F1 macro de 52,82% e Random Forest B de 53,40%: ganho descritivo de 0,58 ponto percentual. Esse resultado motivou a escolha de B, mas não demonstra benefício robusto no teste final."),
-            ], style={**CARD_STYLE, "marginTop": "16px", "borderLeft": "4px solid #2563eb"}),
-            html.Div([html.H3("Entenda A e B: configurações de atributos"), html.P("A e B não são duas versões do algoritmo Random Forest. São configurações das variáveis fornecidas ao classificador: A utiliza indicadores do histórico recente de CVP; B acrescenta informações contextuais territoriais e socioeconômicas."), html.P("Por isso o gráfico de validação contém Softmax A/B, SVM A/B, Random Forest A/B e XGBoost A/B. A comparação ocorre em 2021–2022, período usado para escolher o modelo; o teste final corresponde a 2023–2025."), html.P("O Random Forest B foi selecionado pela validação temporal, mas o acréscimo de variáveis contextuais não demonstrou ganho robusto no teste final.")], style={**CARD_STYLE, "marginTop": "16px"}),
-            html.Div([html.H3("Como interpretar o desempenho"), html.P("Acurácia é a fração de previsões corretas. Acurácia balanceada dá peso igual ao recall de cada classe. F1 macro dá peso igual ao F1 das cinco classes, sendo útil quando suas frequências diferem."), html.P("No teste final (6.660 observações, 2023–2025), o Random Forest B alcançou acurácia de 55,17%, acurácia balanceada de 52,91% e F1 macro de 53,67%. São resultados retrospectivos; o período de teste já foi explorado no desenvolvimento.")], style={**CARD_STYLE, "marginTop": "16px"}),
-
-            html.Div([
-                metric_card("Acurácia final", "55,17%"),
-                metric_card("Acurácia balanceada", "52,91%"),
-                metric_card("F1 macro", "53,67%"),
-                metric_card("F1 macro — treino RF B", "58,03%", "Teste RF B: 53,67%"),
-            ], style={
-                "display": "grid",
-                "gridTemplateColumns": "repeat(auto-fit, minmax(180px, 1fr))",
-                "gap": "12px",
-                "marginTop": "20px",
-            }),
-
-            html.Div([html.H3("Generalização do Random Forest B"), html.P("F1 macro no treinamento: 58,03%; no teste de 2023–2025: 53,67% (diferença de 4,36 pontos percentuais, calculada com valores arredondados). A diferença, isoladamente, não comprova sobreajuste."), html.P("O valor de F1 macro 47,96% da persistência pertence ao diagnóstico preliminar; não é uma comparação direta com o teste final RF B.")], style={**CARD_STYLE, "marginTop": "16px"}),
-            dcc.Graph(figure=fig_validacao),
-            dcc.Graph(figure=fig_classes),
-            dcc.Graph(figure=fig_territorio),
-
-            html.Div([
-                html.H3("Interpretação"),
-                html.P(
-                    "O Random Forest B foi selecionado com base na validação temporal de 2021–2022. "
-                    "As variáveis socioeconômicas melhoraram o desempenho do Random Forest na validação, "
-                    "mas o ganho não se mostrou robusto no teste final de 2023–2025."
-                ),
-                html.P(
-                    "As classes intermediárias, Baixo e Médio, apresentaram maior dificuldade de classificação. "
-                    "O desempenho também variou entre RMR e Interior; essa diferença é descritiva e não implica causalidade."
-                ),
-            ], style=CARD_STYLE),
-        ]),
-
-        dcc.Tab(label="Avaliação científica", children=[
-            html.Div([html.H3("O que esta avaliação complementar demonstra"), html.P("O XGBoost A e a média móvel foram examinados em experimento complementar, com protocolo distinto do Random Forest B. Portanto, não devem ser comparados como se todos os números fossem do mesmo ensaio."), html.P("No painel completo, XGBoost A: 53,51% de F1 macro; média móvel: 52,18%. No subconjunto com linha original, a ordem se inverte: 46,28% versus 48,57%. A dependência do tratamento de registros ausentes limita a interpretação."), html.P("A inclusão de perfis K-Means como atributos não apresentou ganho incremental conclusivo.")], style={**CARD_STYLE, "marginTop": "16px"}),
-
-            html.Div([
-                metric_card("XGBoost A — F1 macro", "53,51%", "Painel completo de 2023–2025"),
-                metric_card("Média móvel 6m — F1 macro", "52,18%", "Mesmo painel completo"),
-                metric_card("Meses sem linha original", "5.368", "20,15% de 26.640 combinações"),
-                metric_card("Unidades territoriais", "185", "184 municípios + Fernando de Noronha"),
-            ], style={"display": "grid", "gridTemplateColumns": "repeat(auto-fit,minmax(210px,1fr))", "gap": "12px", "marginTop": "20px"}),
-            html.Div([
-                html.H3("Experimento retrospectivo: XGBoost versus referências"),
-                dcc.Graph(figure=px.bar(pd.DataFrame({
-                    "Método": ["XGBoost A", "Média móvel 6 meses", "Persistência"],
-                    "F1 macro (%)": [53.51, 52.18, 47.96],
-                }), x="Método", y="F1 macro (%)", text="F1 macro (%)", title="F1 macro — 6.660 observações de teste")),
-                html.P("No subconjunto com 4.862 meses que possuem linha na fonte original, o resultado se inverte: "
-                       "XGBoost 46,28% versus média móvel de seis meses 48,57% (F1 macro). "
-                       "Essa comparação é condicionada à seleção de registros observados."),
-            ], style={**CARD_STYLE, "marginTop": "16px"}),
-            html.Div([
-                html.H3("Perfis K-Means: teste do valor incremental"),
-                dcc.Graph(figure=px.bar(pd.DataFrame({
-                    "Configuração": ["A — sem perfis", "B — grupo K=4", "C — distâncias"],
-                    "F1 macro (%)": [53.49, 53.41, 53.14],
-                }), x="Configuração", y="F1 macro (%)", text="F1 macro (%)", title="Ablação temporal reproduzida — 2023–2025")),
-                html.P("As diferenças pareadas B−A (−0,079 p.p.) e C−A (−0,349 p.p.) possuem intervalos exploratórios "
-                       "que incluem zero. Não foi demonstrado ganho incremental conclusivo; isso não comprova equivalência."),
-            ], style={**CARD_STYLE, "marginTop": "16px"}),
-            html.Div([
-                html.H3("Cobertura e limites de interpretação"),
-                html.P("Das 26.640 células território-mês, 5.368 não tinham linha original na extração e foram codificadas "
-                       "com zero como hipótese operacional. No teste, 1.798 das 2.134 observações da classe Muito Baixo "
-                       "não tinham linha original (84,25%). Ausência de linha não comprova ausência de delitos."),
-                html.P("Em um cenário alternativo de tratamento de ausências, 39,38% dos rótulos de teste mudaram."),
-                html.P("O período 2023–2025 já foi explorado durante o desenvolvimento; os resultados são retrospectivos, "
-                       "não constituem validação prospectiva independente."),
-                html.P("Os resultados de Random Forest/SHAP nas demais abas pertencem ao protocolo da disciplina. "
-                       "Não se deve interpretar seus valores SHAP como explicações do XGBoost."),
-            ], style={**CARD_STYLE, "marginTop": "16px", "marginBottom": "20px"}),
-        ]),
-
-        dcc.Tab(label="Explicabilidade (RF)", children=[
-            html.Div([html.H3("O que o SHAP explica"), html.P("Este gráfico apresenta a importância global média absoluta dos atributos no Random Forest B, não no XGBoost. Valores maiores indicam maior influência média nas previsões, sem informar a direção do efeito."), html.P("As médias móveis de seis e três meses se destacaram. SHAP descreve o comportamento do modelo, não comprova causalidade ou a existência de fatores determinantes dos crimes."), html.P("Urbanização e densidade utilizam referências históricas, não medições anuais atualizadas.")], style={**CARD_STYLE, "marginTop": "16px"}),
-
-            dcc.Graph(figure=fig_shap),
-            html.Div([
-                html.H3("Leitura do SHAP"),
-                html.P(
-                    "Esta explicabilidade refere-se exclusivamente ao Random Forest B da versão da disciplina, não ao XGBoost da avaliação científica. "
-                    "As médias móveis de 6 e 3 meses foram os atributos mais relevantes globalmente. "
-                    "Meses sem registro, taxa atual e taxas defasadas também tiveram contribuição importante."
-                ),
-                html.P(
-                    "Densidade demográfica, urbanização e PIB per capita relativo aparecem com contribuição adicional, "
-                    "mas menor que a dinâmica temporal recente."
-                ),
-                html.P(
-                    "Os valores apresentados são importâncias médias absolutas. Eles não indicam causalidade nem a direção do efeito."
-                ),
-            ], style=CARD_STYLE),
-        ]),
-    ]),
-
-    html.Hr(style={"marginTop": "28px"}),
-    html.P("Painel demonstrativo com métricas consolidadas e incorporadas no código; não realiza predições em tempo real nem consulta diretamente os dados da SDS-PE.", style={"fontSize": "12px", "color": "#475569"}),
-    html.P(
-        "Fonte: microdados da SDS-PE e informações do IBGE. Estados de risco e perfis são construções analíticas deste estudo.",
-        style={"fontSize": "12px", "color": "#6b7280"}
-    ),
-], className="dash-main", style={
-    "maxWidth": "1300px",
-    "margin": "0 auto",
-    "padding": "26px",
-    "fontFamily": "Inter, Arial, sans-serif",
-    "backgroundColor": "#f3f6fb",
-    "minHeight": "100vh",
-})
-
-if __name__ == "__main__":
-    app.run(debug=True)
+@callback(Output('metrics','children'),Output('series','figure'),Output('ranking','figure'),Output('map','figure'),Input('region','value'),Input('city','value'),Input('profile','value'),Input('years','value'))
+def update(r,c,p,y):
+ d=filtered(r,c,p,y); monthly=d.groupby('DATA_MES',as_index=False).agg(CVP=('TOTAL_CVP','sum'),Pop=('POPULACAO_ANO','sum')); monthly['Taxa por 100 mil']=monthly.CVP/monthly.Pop*100000
+ rank=d.groupby('MUNICIPIO',as_index=False).TOTAL_CVP.sum().nlargest(15,'TOTAL_CVP').sort_values('TOTAL_CVP')
+ return [card('Ocorrências',f'{d.TOTAL_CVP.sum():,}'.replace(',','.')),card('Territórios',d.MUNICIPIO.nunique()),card('Observações',len(d))],px.line(monthly,x='DATA_MES',y='Taxa por 100 mil',title='Taxa mensal agregada por 100 mil habitantes'),px.bar(rank,x='TOTAL_CVP',y='MUNICIPIO',orientation='h',title='15 territórios com mais registros no recorte'),make_map(d)
+@callback(Output('download','data'),Input('export','n_clicks'),State('region','value'),State('city','value'),State('profile','value'),State('years','value'),prevent_initial_call=True)
+def download(n,r,c,p,y): return dcc.send_data_frame(filtered(r,c,p,y).to_csv,'adam_recorte.csv',index=False,sep=';')
+if __name__=='__main__': app.run(debug=False)
