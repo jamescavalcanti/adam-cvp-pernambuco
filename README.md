@@ -6,8 +6,7 @@
 
 PPGIA · Universidade Federal Rural de Pernambuco
 
-[![Dashboard](https://img.shields.io/badge/Explorar-Dashboard-176B87?style=for-the-badge&logo=plotly&logoColor=white)](https://adam-cvp-pernambuco.onrender.com/)
-[![Colab](https://img.shields.io/badge/Abrir-Notebook-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/jamescavalcanti/adam-cvp-pernambuco/blob/main/ADAM_CVP_Pernambuco.ipynb)
+[**▶ Acessar dashboard**](https://adam-cvp-pernambuco.onrender.com/)　·　[**📓 Abrir notebook no Colab**](https://colab.research.google.com/github/jamescavalcanti/adam-cvp-pernambuco/blob/main/ADAM_CVP_Pernambuco.ipynb)
 
 <br>
 
