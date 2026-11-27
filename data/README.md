@@ -15,3 +15,4 @@ Arquivos CSV separados por ponto e vírgula. São insumos do painel, não um pac
 | `pernambuco.geojson` | Malha territorial IBGE, associada por código territorial |
 
 Os filtros não recalculam os modelos. Consulte a [auditoria](../AUDITORIA_REPRODUTIBILIDADE.md) e o [script da malha](../prepare_map.py).
+
