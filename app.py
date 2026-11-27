@@ -15,13 +15,13 @@ models=load('comparacao_especificacoes_A_B')
 shap=load('importancia_SHAP_RF_B')
 k=load('avaliacao_k_clustering')
 app=Dash(__name__); server=app.server
-app.title='ADAM 2.0 | Pernambuco'
+app.title='Aprendizado de máquina | CVP em Pernambuco'
 def graph(fig): return dcc.Graph(figure=fig,config={'displaylogo':False})
 def table(df): return dash_table.DataTable(data=df.to_dict('records'),columns=[{'name':c,'id':c} for c in df],page_size=12,style_table={'overflowX':'auto'},style_cell={'textAlign':'left','padding':'8px'})
 def options(s): return [{'label':str(x),'value':x} for x in sorted(s.unique())]
 def card(label,value): return html.Div([html.Small(label),html.H2(value)],className='metric')
-app.layout=html.Div([html.Header([html.H1('ADAM 2.0'),html.P('Inteligência territorial • CVP em Pernambuco • 2014–2025 | Pesquisa aplicada UFRPE')]),dcc.Tabs([
- dcc.Tab(label='Exploração territorial',children=[html.Div([html.Div(['Região',dcc.Dropdown(options(base.REGIAO),multi=True,id='region')]),html.Div(['Município',dcc.Dropdown(options(base.MUNICIPIO),multi=True,id='city')]),html.Div(['Perfil histórico K=4',dcc.Dropdown(options(base.PERFIL_K4),multi=True,id='profile')]),html.Div(['Período',dcc.RangeSlider(2014,2025,1,value=[2014,2025],marks={i:str(i) for i in range(2014,2026)},id='years')])],className='filters'),html.Div(id='metrics',className='metrics'),dcc.Graph(id='map'),dcc.Graph(id='series'),dcc.Graph(id='ranking'),html.Button('Exportar recorte CSV',id='export'),dcc.Download(id='download')]),
+app.layout=html.Div([html.Header([html.H1('Uma abordagem de aprendizado de máquina para o agrupamento de municípios e a classificação de estados de risco de crimes violentos contra o patrimônio em Pernambuco',style={'fontSize':'clamp(1.35rem, 2.5vw, 2.1rem)','lineHeight':'1.3'}),html.P('Inteligência territorial • CVP em Pernambuco • 2014–2025 | Pesquisa aplicada UFRPE')]),dcc.Tabs([
+ dcc.Tab(label='Exploração territorial',children=[html.Div([html.Div(['Região',dcc.Dropdown(options(base.REGIAO),multi=True,id='region')]),html.Div(['Município',dcc.Dropdown(options(base.MUNICIPIO),multi=True,id='city')]),html.Div(['Perfil histórico K=4',dcc.Dropdown(options(base.PERFIL_K4),multi=True,id='profile')]),html.Div([html.Label('Ano inicial'),dcc.Dropdown(list(range(2014,2026)),2014,id='year-start',clearable=False)]),html.Div([html.Label('Ano final'),dcc.Dropdown(list(range(2014,2026)),2025,id='year-end',clearable=False)])],className='filters'),html.Div(id='metrics',className='metrics'),dcc.Graph(id='map'),dcc.Graph(id='series'),dcc.Graph(id='ranking'),html.Button('Exportar recorte CSV',id='export'),dcc.Download(id='download')]),
  dcc.Tab(label='Agrupamentos',children=[html.P('Perfis históricos fixos; K=4 escolhido por interpretação, não pela maior silhueta.'),graph(px.bar(clusters.groupby('PERFIL_K4',as_index=False).size(),x='PERFIL_K4',y='size',title='Territórios por perfil')),graph(px.line(k,x='K',y='SILHUETA_MEDIA',markers=True,title='Sensibilidade ao número de grupos')),graph(px.line(k,x='K',y='INERCIA',markers=True,title='Método do cotovelo')),table(clusters)]),
  dcc.Tab(label='Modelos de IA',children=[html.P('Resultados exportados da validação temporal 2021–2022; não são previsões em tempo real.'),graph(px.bar(models,x='Modelo',y='F1 Macro',color='Especificação',barmode='group',title='F1 macro (%) — validação')),table(models),html.H3('Teste RF B — métricas por classe'),table(load('metricas_por_classe_RF_B')),html.H3('Desempenho territorial'),table(load('desempenho_territorial_RF_B'))]),
  dcc.Tab(label='Explicabilidade',children=[html.P('Importância global SHAP: associação com a saída do modelo, não causalidade.'),graph(px.bar(shap.sort_values('Importância SHAP média'),x='Importância SHAP média',y='Variável',orientation='h',height=700))]),
@@ -42,11 +42,12 @@ def make_map(d):
  fig=px.choropleth(agg,geojson=geo,locations='codigo',featureidkey='properties.codarea',color='Taxa média mensal',hover_name='MUNICIPIO',hover_data=['CVP'],title='Taxa mensal por 100 mil habitantes no recorte',color_continuous_scale='Blues')
  fig.update_geos(fitbounds='locations',visible=False); fig.update_layout(height=500,margin=dict(l=10,r=10,t=60,b=10)); return fig
 
-@callback(Output('metrics','children'),Output('series','figure'),Output('ranking','figure'),Output('map','figure'),Input('region','value'),Input('city','value'),Input('profile','value'),Input('years','value'))
-def update(r,c,p,y):
+@callback(Output('metrics','children'),Output('series','figure'),Output('ranking','figure'),Output('map','figure'),Input('region','value'),Input('city','value'),Input('profile','value'),Input('year-start','value'),Input('year-end','value'))
+def update(r,c,p,start,end):
+ y=sorted([start,end])
  d=filtered(r,c,p,y); monthly=d.groupby('DATA_MES',as_index=False).agg(CVP=('TOTAL_CVP','sum'),Pop=('POPULACAO_ANO','sum')); monthly['Taxa por 100 mil']=monthly.CVP/monthly.Pop*100000
  rank=d.groupby('MUNICIPIO',as_index=False).TOTAL_CVP.sum().nlargest(15,'TOTAL_CVP').sort_values('TOTAL_CVP')
  return [card('Ocorrências',f'{d.TOTAL_CVP.sum():,}'.replace(',','.')),card('Territórios',d.MUNICIPIO.nunique()),card('Observações',len(d))],px.line(monthly,x='DATA_MES',y='Taxa por 100 mil',title='Taxa mensal agregada por 100 mil habitantes'),px.bar(rank,x='TOTAL_CVP',y='MUNICIPIO',orientation='h',title='15 territórios com mais registros no recorte'),make_map(d)
-@callback(Output('download','data'),Input('export','n_clicks'),State('region','value'),State('city','value'),State('profile','value'),State('years','value'),prevent_initial_call=True)
-def download(n,r,c,p,y): return dcc.send_data_frame(filtered(r,c,p,y).to_csv,'adam_recorte.csv',index=False,sep=';')
+@callback(Output('download','data'),Input('export','n_clicks'),State('region','value'),State('city','value'),State('profile','value'),State('year-start','value'),State('year-end','value'),prevent_initial_call=True)
+def download(n,r,c,p,start,end): return dcc.send_data_frame(filtered(r,c,p,sorted([start,end])).to_csv,'adam_recorte.csv',index=False,sep=';')
 if __name__=='__main__': app.run(debug=False)
