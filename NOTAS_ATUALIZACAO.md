@@ -1,4 +1,15 @@
-# Atualização segura — 22/10/2026
+# Histórico de atualizações
+
+## 26/11/2026 — versão de entrega
+
+- Dashboard Plotly Dash com leitura de CSVs, filtros, mapa municipal e exportação.
+- Notebook publicado com 82 células; documentação e testes atualizados.
+- Resultados científicos preservados; sem novo treinamento nesta atualização.
+- Publicação do acabamento visual no Render depende da confirmação do deploy.
+
+## Registro histórico anterior
+
+### Atualização segura — 22/10/2026
 
 - Mantidas a arquitetura Plotly Dash, as quatro abas originais, o Procfile e o requirements.txt.
 - Adicionada a aba «Avaliação científica» com números reportados no manuscrito espanhol revisado.

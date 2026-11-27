@@ -1,5 +1,9 @@
 # Auditoria de reprodutibilidade — ADAM (10/11/2026)
 
+## Atualização de contexto — 26/11/2026
+
+As seções seguintes registram a auditoria histórica de 10/11. Atualmente o notebook publicado possui 82 células e o dashboard lê os CSVs em `data/`, inclui mapa e filtros. Os testes atuais estão em `tests/smoke.py`. A execução integral independente de RF B/XGBoost/SHAP continua sem confirmação. Consulte o [catálogo atual](data/README.md).
+
 ## Materiais conferidos
 - Notebook original compartilhado com professores: `ADAM_CVP_Pernambuco.ipynb`, 80 células na `main`.
 - Notebook consolidado do Colab: `ADAM_CVP_COLAB_COM_FECHAMENTO_GRAFICOS.ipynb`, 82 células.

@@ -6,6 +6,14 @@ Uma abordagem de aprendizado de máquina para o agrupamento de municípios e a c
 
 [Dashboard público](https://adam-cvp-pernambuco.onrender.com/) · [Notebook científico](ADAM_CVP_Pernambuco.ipynb) · [Auditoria de reprodutibilidade](AUDITORIA_REPRODUTIBILIDADE.md) · [Testes automatizados](https://github.com/jamescavalcanti/adam-cvp-pernambuco/actions)
 
+## Roteiro de avaliação
+
+1. [Dashboard público](https://adam-cvp-pernambuco.onrender.com/): exploração dos resultados.
+2. [Notebook no Colab](https://colab.research.google.com/github/jamescavalcanti/adam-cvp-pernambuco/blob/main/ADAM_CVP_Pernambuco.ipynb): código e etapas experimentais.
+3. [Catálogo de dados](data/README.md): arquivos usados no painel.
+4. [Auditoria](AUDITORIA_REPRODUTIBILIDADE.md): evidências e limites da reprodução.
+5. [Testes](tests/README.md): validação da aplicação.
+
 ## Objetivos
 
 - PP1: identificar perfis territoriais históricos de CVP por agrupamento K-Means.
