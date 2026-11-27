@@ -58,3 +58,4 @@ Foi adicionado `.github/workflows/dashboard-smoke.yml` à branch de revisão. O 
 
 ## Confirmação do teste automatizado
 GitHub Actions, run [42743937618](https://github.com/jamescavalcanti/adam-cvp-pernambuco/actions/runs/42743937618), **concluído com sucesso**: checkout, instalação de dependências, compilação/importação de `app.py`, verificações de tabelas e resposta HTTP 200. Este é um *smoke test*, não uma avaliação visual nem uma reprodução do RF B/SHAP. A execução local não foi possível porque o ambiente local não possui Dash e não permite instalar pacotes pela rede; a execução no GitHub Actions substitui o teste de importação/HTTP.
+
