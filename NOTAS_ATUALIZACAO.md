@@ -19,3 +19,4 @@
 - Nenhum novo experimento foi executado. A compilação e a inicialização da aplicação devem ser conferidas antes de implantar.
 - O notebook existente foi preservado byte a byte. Ele pode não reproduzir todas as novas métricas; conferir antes de anunciar reprodutibilidade integral.
 - Não foi realizada publicação no GitHub nem deploy no Render.
+
